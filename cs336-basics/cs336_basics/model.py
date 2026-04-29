@@ -12,6 +12,7 @@ import torch.nn as nn
 from einops import einsum, rearrange
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
+import torch.cuda.nvtx as nvtx
 
 from cs336_basics.nn_utils import softmax
 
@@ -248,9 +249,10 @@ class BasicsTransformerLM(nn.Module):
         # x = self.positional_encoder(embedded_tokens, positions)
         x = embedded_tokens
 
-        for layer in self.layers:
-            # (batch size, sequence_length, d_model)
-            x = layer(x)
+        for i, layer in enumerate(self.layers):
+            with nvtx.range(f"TransformerBlock {i}"):
+                # (batch size, sequence_length, d_model)
+                x = layer(x)
         # (batch size, sequence_length, d_model)
         x = self.ln_final(x)
         # (batch size, sequence_length, vocab_size)
